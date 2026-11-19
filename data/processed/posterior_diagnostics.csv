@@ -1,0 +1,6 @@
+parameter,effective_sample_size,split_rhat,mean_acceptance_rate
+growth_rate_day,199.9190981,1.024123239,0.199125
+grazing_rate_day,87.39549632,1.028708589,0.199125
+zooplankton_mortality_day,145.7191197,1.04148079,0.199125
+chlorophyll_scale_mg_m3,96.15580154,1.0391776,0.199125
+observation_log_sd,257.9152151,1.017432978,0.199125
