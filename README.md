@@ -17,7 +17,13 @@ Then launch with:
 .venv\Scripts\python.exe -m streamlit run app.py --browser.gatherUsageStats false
 ```
 
-Or double-click `run.bat`; it uses the local `.venv` if present, otherwise the Python launcher environment. It does not install packages, send Streamlit usage statistics, or download data. The dashboard reads only bundled files under `data/`.
+Or double-click `run.bat`; it uses the local `.venv` if present, otherwise the Python launcher environment. It does not install packages, send Streamlit usage statistics, or download data. Bundled files under `data/` are read-only; optional CSV uploads remain in Streamlit session memory and do not modify those files.
+
+## Upload and interactive prediction
+
+Open **Dataset Upload** to download a CSV template or upload a file with `date`, `sst_c`, and `chlorophyll_mg_m3` columns. The dashboard validates and previews uploaded rows and keeps them separate from the bundled dataset for the current session.
+
+In **Interactive Prediction**, choose a dataset and an observation date, then run the prediction. The date-specific posterior predictive estimate reuses the bundled Bayesian posterior and NPZD model; uploaded chlorophyll is only shown as the observed comparison, while uploaded SST is used as model forcing. Prediction requires at least two SST observations in the selected calendar year. This is an estimate for an observed date, not a future forecast. Its 95% interval propagates parameter uncertainty only and excludes retrieval and structural model uncertainty.
 
 ## Bundled observations
 
@@ -36,7 +42,7 @@ python -m compileall -q app.py src tests
 pytest -q
 ```
 
-The tests exercise the offline data pipeline, raw observation metadata, NPZD mass balance, and multi-chain posterior diagnostics. Rebuilding the processed CSV from bundled NetCDF files is optional:
+The tests exercise the offline data pipeline, raw observation metadata, NPZD mass balance, multi-chain posterior diagnostics, CSV upload validation, and date-specific predictions. Rebuilding the processed CSV from bundled NetCDF files is optional:
 
 ```bat
 python -m src.data_pipeline

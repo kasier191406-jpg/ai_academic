@@ -33,6 +33,6 @@
 
 **Does this reproduce the named research paper?** No. It is an academic prototype inspired by the general satellite-informed Bayesian ecosystem-modelling approach.
 
-**How does the app work offline?** Raw and processed files, posterior samples, and all code are in the repository. The app reads them locally and has no runtime network dependency.
+**How does the app work offline?** Raw and processed files, posterior samples, and all code are in the repository. The app reads them locally; optional CSV uploads are held in the current Streamlit session. It has no runtime network dependency.
 
 **Are the uncertainty bands complete predictive uncertainty?** No. They propagate parameter uncertainty only; they do not include satellite retrieval error, model structural error, or uncertainty from missing MLD/PAR observations.

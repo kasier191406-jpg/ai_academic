@@ -1,5 +1,6 @@
 """Offline Streamlit dashboard for the OceanSense AI academic project."""
 
+import hashlib
 from pathlib import Path
 
 import pandas as pd
@@ -17,6 +18,7 @@ from src.model import (
     sampling_diagnostics,
     simulate_npzd,
 )
+from src.interactive import posterior_prediction_for_date, validate_uploaded_csv
 
 
 ROOT = Path(__file__).resolve().parent
@@ -257,11 +259,13 @@ sections = [
     "Chlorophyll-a Analysis",
     "NPZD Ecosystem Model",
     "Bayesian Parameter Estimation",
+    "Dataset Upload",
+    "Interactive Prediction",
     "Prediction and Uncertainty Analysis",
     "Results and Model Limitations",
 ]
 section = st.sidebar.radio("Project sections", sections)
-st.sidebar.success("Offline mode: bundled files only")
+st.sidebar.success("Offline mode: local files only")
 st.sidebar.caption("Real observations: 11 cloud-screened 2003 dates")
 
 st.title("OceanSense AI")
@@ -566,6 +570,147 @@ elif section == "Bayesian Parameter Estimation":
     )
     st.plotly_chart(style_figure(figure, height=450), width="stretch")
     st.caption("Shaded area marks the equal-tail 95% posterior credible interval; the dashed line is the posterior median. Priors are truncated log-normal and the likelihood uses log-normal observation error.")
+
+elif section == "Dataset Upload":
+    st.subheader("Upload observation CSV")
+    st.write("Upload a CSV with `date`, `sst_c`, and `chlorophyll_mg_m3` columns. Uploaded rows stay in this Streamlit session and are kept separate from the bundled observations.")
+    st.download_button(
+        "Download CSV template",
+        data="date,sst_c,chlorophyll_mg_m3\n",
+        file_name="oceansense_observations_template.csv",
+        mime="text/csv",
+    )
+    uploaded_file = st.file_uploader("Choose a CSV file", type=["csv"], key="observation_csv")
+    if uploaded_file is None:
+        uploaded_observations = st.session_state.get("uploaded_observations")
+        if uploaded_observations is None:
+            st.info("Choose a CSV file to validate and preview its observations.")
+        else:
+            filename = st.session_state.get("uploaded_filename", "uploaded CSV")
+            st.info(
+                f"{filename} remains available for this session: "
+                f"{len(uploaded_observations)} valid observation records."
+            )
+            st.dataframe(uploaded_observations.head(10), width="stretch", hide_index=True)
+    else:
+        try:
+            uploaded_observations = validate_uploaded_csv(uploaded_file.getvalue())
+        except ValueError as error:
+            st.session_state.pop("uploaded_observations", None)
+            st.session_state.pop("uploaded_filename", None)
+            st.session_state.pop("uploaded_dataset_id", None)
+            st.error(str(error))
+        else:
+            st.session_state.uploaded_observations = uploaded_observations
+            st.session_state.uploaded_filename = uploaded_file.name
+            st.session_state.uploaded_dataset_id = hashlib.sha256(
+                uploaded_file.getvalue()
+            ).hexdigest()
+            st.success(f"{len(uploaded_observations)} valid observation records.")
+            st.dataframe(uploaded_observations.head(10), width="stretch", hide_index=True)
+
+elif section == "Interactive Prediction":
+    st.subheader("Date-specific posterior predictive estimate")
+    dataset_choice = st.selectbox("Dataset", ["Bundled Dataset", "Uploaded Dataset"])
+    if dataset_choice == "Bundled Dataset":
+        prediction_data = data
+        dataset_id = "bundled"
+    else:
+        prediction_data = st.session_state.get("uploaded_observations")
+        if prediction_data is None:
+            st.info("Upload and validate a CSV in the Dataset Upload section first.")
+            st.stop()
+        dataset_id = st.session_state.get("uploaded_dataset_id", "uploaded")
+
+    prediction_data = prediction_data.sort_values("date").reset_index(drop=True)
+    available_dates = prediction_data["date"].dt.strftime("%Y-%m-%d").tolist()
+    selected_date_label = st.selectbox("Observation date", available_dates)
+    selected_date = pd.Timestamp(selected_date_label)
+    selected_observation = prediction_data.loc[
+        prediction_data["date"] == selected_date
+    ].iloc[0]
+
+    first, second = st.columns(2)
+    first.metric("Observed SST", f"{selected_observation['sst_c']:.2f} °C")
+    second.metric(
+        "Observed Chlorophyll-a",
+        f"{selected_observation['chlorophyll_mg_m3']:.3f} mg/m³",
+    )
+
+    year_count = int((prediction_data["date"].dt.year == selected_date.year).sum())
+    if year_count < 2:
+        st.warning(
+            "A prediction needs at least two SST observations in the selected "
+            "calendar year to provide interpolated model forcing."
+        )
+
+    prediction_key = (dataset_id, selected_date.isoformat())
+    if st.button("Run Prediction", type="primary", disabled=year_count < 2):
+        prediction = posterior_prediction_for_date(
+            posterior(),
+            prediction_data,
+            selected_date,
+        )
+        st.session_state.interactive_prediction = {
+            "key": prediction_key,
+            **prediction,
+        }
+
+    saved_prediction = st.session_state.get("interactive_prediction")
+    if saved_prediction is not None and saved_prediction["key"] == prediction_key:
+        st.metric(
+            "Predicted Chlorophyll-a",
+            f"{saved_prediction['median']:.3f} mg/m³",
+        )
+        st.caption(
+            "95% parameter interval: "
+            f"{saved_prediction['lower_95']:.3f}–"
+            f"{saved_prediction['upper_95']:.3f} mg/m³."
+        )
+        figure = go.Figure()
+        figure.add_trace(
+            go.Scatter(
+                x=["Observed", "Model prediction"],
+                y=[
+                    selected_observation["chlorophyll_mg_m3"],
+                    saved_prediction["median"],
+                ],
+                mode="markers",
+                marker={"color": [COLORS["coral"], COLORS["teal"]], "size": 13},
+                error_y={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": [
+                        0,
+                        saved_prediction["upper_95"] - saved_prediction["median"],
+                    ],
+                    "arrayminus": [
+                        0,
+                        saved_prediction["median"] - saved_prediction["lower_95"],
+                    ],
+                    "visible": True,
+                    "color": COLORS["teal"],
+                    "thickness": 2,
+                    "width": 6,
+                },
+                hovertemplate="%{x}<br>Chlorophyll-a: %{y:.3f} mg/m³<extra></extra>",
+            )
+        )
+        figure.update_layout(
+            title=f"Observed and predicted chlorophyll-a on {selected_date:%Y-%m-%d}",
+            xaxis_title="",
+            yaxis_title="Chlorophyll-a (mg/m³)",
+        )
+        st.plotly_chart(style_figure(figure, height=380), width="stretch")
+
+    st.caption(
+        "This is a posterior predictive estimate for an observed date, not a future "
+        "forecast. The existing posterior was calibrated on bundled observations. "
+        "Uploaded chlorophyll values are only shown for comparison; they are not used "
+        "to fit or update the model. Uploaded SST values provide model forcing. "
+        "The 95% interval reflects parameter uncertainty only, not measurement or "
+        "model-structure uncertainty."
+    )
 
 elif section == "Prediction and Uncertainty Analysis":
     st.subheader("Posterior predictive uncertainty")

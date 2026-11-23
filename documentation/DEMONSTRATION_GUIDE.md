@@ -14,7 +14,7 @@ In the project directory, start the already-installed app with:
 py -m streamlit run app.py --browser.gatherUsageStats false
 ```
 
-Alternatively, double-click `run.bat`. It disables Streamlit usage statistics and does not install packages. Once started, the application and full demonstration use only bundled project files; no API, credentials, or downloads are required.
+Alternatively, double-click `run.bat`. It disables Streamlit usage statistics and does not install packages. The app runs offline; optional uploaded CSV files remain in session memory and do not replace bundled project data.
 
 ## Walkthrough
 
@@ -23,7 +23,8 @@ Alternatively, double-click `run.bat`. It disables Streamlit usage statistics an
 3. **Observation plots (60 seconds):** Open **SST Analysis** and **Chlorophyll-a Analysis**. Identify the measured quantities and units; explain that chlorophyll's valid spatial coverage varies with cloud/quality screening.
 4. **NPZD model (60 seconds):** Open **NPZD Ecosystem Model**. Explain nutrient, phytoplankton, zooplankton, and detritus; real SST forces temperature response, while seasonal light is an assumption because no PAR measurement is bundled.
 5. **Bayesian results (90 seconds):** Open **Bayesian Parameter Estimation**. Show posterior means/medians, equal-tail 95% credible intervals, parameter histogram, ESS and split R-hat. Explain that intervals are conditional on this simplified model, priors, and eleven dates; diagnostics are not proof of convergence.
-6. **Prediction (45 seconds):** Open **Prediction and Uncertainty Analysis**. Identify satellite observations, posterior median, and parameter-only 95% interval; it does not include retrieval or structural model error.
-7. **Limitations (45 seconds):** Finish on **Results and Model Limitations**. State explicitly: only 11 dates in 2003, no observed MLD/PAR, small and cloud-dependent chlorophyll coverage, and a reduced model that is not the paper's PMCMC implementation.
+6. **Upload and interactive prediction (60 seconds):** In **Dataset Upload**, download the CSV template or upload a local file with the three required columns. Then open **Interactive Prediction**, select a dataset and observation date, and run the date-specific estimate. Explain that uploaded chlorophyll is not used to fit the model, uploaded SST provides forcing, and the interval reflects parameter uncertainty only; this is not a future forecast.
+7. **Posterior predictive analysis (45 seconds):** Open **Prediction and Uncertainty Analysis**. Identify satellite observations, posterior median, and parameter-only 95% interval; it does not include retrieval or structural model error.
+8. **Limitations (45 seconds):** Finish on **Results and Model Limitations**. State explicitly: only 11 dates in the bundled 2003 data, no observed MLD/PAR, small and cloud-dependent chlorophyll coverage, and a reduced model that is not the paper's PMCMC implementation.
 
 The precomputed posterior makes the walkthrough immediate and offline. If time permits, click **Run fresh Bayesian estimation** on the Bayesian page to run four new local Metropolis-Hastings chains; this additional computation may take a few minutes on a laptop.
