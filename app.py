@@ -24,14 +24,14 @@ from src.interactive import posterior_prediction_for_date, validate_uploaded_csv
 ROOT = Path(__file__).resolve().parent
 PROCESSED = ROOT / "data" / "processed"
 COLORS = {
-    "navy": "#17364b",
-    "teal": "#168c86",
-    "blue": "#4b83a6",
-    "gold": "#cf8b36",
-    "coral": "#c85e54",
-    "slate": "#5c7180",
-    "grid": "#e6edf2",
-    "text": "#243b4a",
+    "navy": "#123247",
+    "teal": "#287f80",
+    "blue": "#397496",
+    "gold": "#b37a35",
+    "coral": "#b75e55",
+    "slate": "#627783",
+    "grid": "#e3eaee",
+    "text": "#203947",
 }
 STATE_COLORS = [COLORS["navy"], COLORS["teal"], COLORS["gold"], COLORS["blue"]]
 PARAMETER_LABELS = {
@@ -48,6 +48,23 @@ PARAMETER_UNITS = {
     "chlorophyll_scale_mg_m3": "Chlorophyll scale (mg/m³ per relative P)",
     "observation_log_sd": "Observation log-SD",
 }
+NAVIGATION_GROUPS = {
+    "Overview": ["Project Overview"],
+    "Data Analysis": [
+        "Dataset Explorer",
+        "Ocean Observation Analysis",
+        "SST Analysis",
+        "Chlorophyll-a Analysis",
+        "Dataset Upload",
+    ],
+    "Ecosystem Modelling": ["NPZD Ecosystem Model"],
+    "Bayesian Estimation": ["Bayesian Parameter Estimation"],
+    "Predictions": [
+        "Interactive Prediction",
+        "Prediction and Uncertainty Analysis",
+    ],
+    "Results": ["Results and Model Limitations"],
+}
 
 st.set_page_config(page_title="OceanSense AI", page_icon="O", layout="wide")
 st.markdown(
@@ -55,113 +72,380 @@ st.markdown(
     <style>
     :root {
         color-scheme: light;
+        --ink: #203947;
+        --muted: #627783;
+        --navy: #123247;
+        --teal: #287f80;
+        --ocean: #397496;
+        --canvas: #f3f6f7;
+        --line: #e1e8ec;
+        --surface: #ffffff;
     }
     .stApp {
-        background: #f3f7fa;
-        color: #243b4a;
+        background: var(--canvas);
+        color: var(--ink);
     }
     [data-testid="stAppViewContainer"] .main .block-container {
-        max-width: 1440px;
-        padding: 2rem 2.4rem 3rem;
+        max-width: 1500px;
+        padding: 1.6rem 2.5rem 3.2rem;
+    }
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+    [data-testid="stToolbar"] {
+        visibility: hidden;
+        height: 0;
     }
     h1, h2, h3 {
-        color: #17364b;
+        color: var(--navy);
         letter-spacing: -0.025em;
     }
     h1 {
-        font-size: 2.35rem;
+        font-size: 2.15rem;
         font-weight: 720;
-        margin-bottom: 0.15rem;
+        margin-bottom: 0.35rem;
     }
     h2, h3 {
-        font-weight: 650;
+        font-weight: 680;
+    }
+    h2 {
+        margin-top: 0.65rem;
+        margin-bottom: 0.5rem;
+    }
+    h3 {
+        margin-top: 0.8rem;
+        margin-bottom: 0.45rem;
     }
     [data-testid="stCaptionContainer"] {
-        color: #5c7180;
+        color: var(--muted);
         line-height: 1.55;
     }
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #17364b 0%, #102b3c 100%);
-        border-right: 1px solid #d6e2e9;
+        background: #112d3d;
+        border-right: 1px solid #254353;
     }
-    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] label {
-        color: #e8f1f5;
+    section[data-testid="stSidebar"] > div:first-child {
+        background: #112d3d;
     }
-    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
-        color: #c4d6e0 !important;
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding: 0.65rem 0.7rem 1rem;
     }
-    section[data-testid="stSidebar"] p {
-        color: #c4d6e0 !important;
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: #c8d6dd;
     }
-    section[data-testid="stSidebar"] [data-testid="stAlert"] {
-        background: #073b2c;
-        border: 1px solid #175844;
-        border-radius: 12px;
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.65rem 0.35rem 1.25rem;
+        border-bottom: 1px solid rgba(226, 238, 244, 0.12);
+        margin-bottom: 0.8rem;
     }
-    section[data-testid="stSidebar"] [data-testid="stAlert"] p,
-    section[data-testid="stSidebar"] [data-testid="stAlert"] svg {
-        color: #e7f5ec;
-        fill: #e7f5ec;
+    .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border: 1px solid rgba(214, 235, 239, 0.38);
+        border-radius: 0.65rem;
+        color: #e3f1ef;
+        font-size: 1.15rem;
+        font-weight: 750;
+        letter-spacing: -0.06em;
     }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] {
-        padding-top: 0.35rem;
+    .brand-name {
+        color: #f2f6f7;
+        font-size: 0.96rem;
+        font-weight: 720;
+        letter-spacing: -0.02em;
     }
-    [data-testid="stMetric"] {
-        background: #ffffff;
-        border: 1px solid #dce7ed;
-        border-radius: 14px;
-        box-shadow: 0 3px 12px rgba(23, 54, 75, 0.05);
-        padding: 1rem 1.15rem;
+    .brand-subtitle {
+        color: #9fb3be;
+        font-size: 0.62rem;
+        letter-spacing: 0.11em;
+        margin-top: 0.13rem;
+        text-transform: uppercase;
     }
-    [data-testid="stMetricLabel"] {
-        color: #5c7180;
-        font-size: 0.78rem;
-        font-weight: 600;
-    }
-    [data-testid="stMetricValue"] {
-        color: #17364b;
-        font-size: 1.35rem;
+    .sidebar-section-label {
+        color: #8fa8b5;
+        font-size: 0.62rem;
         font-weight: 700;
+        letter-spacing: 0.13em;
+        margin: 0.9rem 0 0.35rem;
+        padding-left: 0.65rem;
+        text-transform: uppercase;
     }
-    .notice-card {
-        background: #eaf3f7;
-        border: 1px solid #d2e3eb;
-        border-left: 4px solid #4b83a6;
-        border-radius: 11px;
-        color: #17364b;
-        line-height: 1.55;
-        margin: 0.6rem 0 1rem;
-        padding: 1rem 1.15rem;
+    section[data-testid="stSidebar"] [data-testid="stButton"] {
+        margin: 0;
     }
-    [data-testid="stPlotlyChart"],
-    [data-testid="stDataFrame"] {
-        background: #ffffff;
-        border: 1px solid #dce7ed;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(23, 54, 75, 0.04);
-        overflow: hidden;
+    section[data-testid="stSidebar"] [data-testid="stButton"] button {
+        min-height: 2.15rem;
+        justify-content: flex-start;
+        margin: 0.08rem 0;
+        padding: 0.38rem 0.68rem;
+        text-align: left;
+        transition: background-color 120ms ease, color 120ms ease;
     }
-    div.stDownloadButton > button,
-    button[kind="primary"] {
-        background: #168c86;
-        border: 1px solid #168c86;
-        border-radius: 9px;
+    section[data-testid="stSidebar"] [data-testid="stButton"] button[kind="secondary"] {
+        background: transparent;
+        border: 1px solid transparent;
+        color: #d2dfe5;
+        font-weight: 500;
+    }
+    section[data-testid="stSidebar"] [data-testid="stButton"] button[kind="secondary"]:hover {
+        background: #1b3c4d;
+        border-color: #315466;
+        color: #ffffff;
+    }
+    section[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
+        background: #205b68;
+        border: 1px solid #337786;
+        border-left: 3px solid #65b5ad;
         color: #ffffff;
         font-weight: 650;
     }
-    div.stDownloadButton > button:hover,
-    button[kind="primary"]:hover {
-        background: #11746f;
-        border-color: #11746f;
+    .sidebar-footer {
+        border-top: 1px solid rgba(226, 238, 244, 0.12);
+        color: #9fb3be;
+        font-size: 0.72rem;
+        line-height: 1.5;
+        margin-top: 1.2rem;
+        padding: 0.8rem 0.45rem 0.15rem;
+    }
+    .page-context {
+        align-items: center;
+        color: #778a95;
+        display: flex;
+        font-size: 0.68rem;
+        font-weight: 650;
+        gap: 0.55rem;
+        letter-spacing: 0.1em;
+        margin: 0.05rem 0 0.9rem;
+        text-transform: uppercase;
+    }
+    .page-context span {
+        color: var(--teal);
+    }
+    .overview-hero {
+        align-items: center;
+        background: var(--navy);
+        border: 1px solid #1d4356;
+        border-radius: 16px;
+        color: #f3f7f8;
+        display: flex;
+        justify-content: space-between;
+        margin: 0.15rem 0 1.1rem;
+        min-height: 170px;
+        padding: 1.7rem 2rem;
+    }
+    .overview-hero h1 {
         color: #ffffff;
+        font-size: 2.45rem;
+        letter-spacing: -0.045em;
+        margin: 0.4rem 0 0.3rem;
+    }
+    .overview-hero p {
+        color: #ccdae0;
+        font-size: 0.97rem;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 680px;
+    }
+    .hero-eyebrow, .eyebrow {
+        color: #83c1bb;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+    .hero-period {
+        border-left: 1px solid rgba(231, 240, 243, 0.22);
+        margin-left: 2rem;
+        min-width: 170px;
+        padding-left: 1.5rem;
+    }
+    .hero-period strong {
+        color: #ffffff;
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 680;
+        margin: 0.35rem 0 0.1rem;
+    }
+    .hero-period span {
+        color: #bbccd4;
+        font-size: 0.78rem;
+    }
+    .overview-section-title {
+        color: var(--navy);
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        margin: 0.5rem 0 0.15rem;
+    }
+    .overview-section-note {
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.5;
+        margin-bottom: 0.7rem;
+    }
+    .overview-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        color: var(--ink);
+        height: 100%;
+        line-height: 1.55;
+        padding: 1rem 1.05rem;
+    }
+    .overview-card + .overview-card {
+        margin-top: 0.7rem;
+    }
+    .overview-card-title {
+        color: var(--navy);
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+    }
+    .overview-card p {
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin: 0;
+    }
+    .workflow-step {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        min-height: 92px;
+        padding: 0.9rem 1rem;
+    }
+    .workflow-step span {
+        color: var(--teal);
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 750;
+        letter-spacing: 0.12em;
+        margin-bottom: 0.3rem;
+        text-transform: uppercase;
+    }
+    .workflow-step strong {
+        color: var(--navy);
+        display: block;
+        font-size: 0.83rem;
+        margin-bottom: 0.18rem;
+    }
+    .workflow-step p {
+        color: var(--muted);
+        font-size: 0.74rem;
+        line-height: 1.45;
+        margin: 0;
+    }
+    [data-testid="stMetric"] {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-top: 2px solid #b6d2d1;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(18, 50, 71, 0.035);
+        min-height: 105px;
+        padding: 0.9rem 1rem;
+    }
+    [data-testid="stMetricLabel"] {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 650;
+    }
+    [data-testid="stMetricValue"] {
+        color: var(--navy);
+        font-size: 1.42rem;
+        font-weight: 720;
+    }
+    [data-testid="stPlotlyChart"],
+    [data-testid="stDataFrame"] {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        box-shadow: 0 2px 6px rgba(18, 50, 71, 0.035);
+        overflow: hidden;
+    }
+    [data-testid="stDataFrame"] {
+        padding: 0.15rem;
+    }
+    .stButton > button,
+    .stDownloadButton > button {
+        border-radius: 8px;
+        font-weight: 650;
+        min-height: 2.45rem;
+    }
+    .stButton > button[kind="primary"],
+    .stDownloadButton > button {
+        background: var(--teal);
+        border: 1px solid var(--teal);
+        color: #ffffff;
+    }
+    .stButton > button[kind="primary"]:hover,
+    .stDownloadButton > button:hover {
+        background: #216d6e;
+        border-color: #216d6e;
+        color: #ffffff;
+    }
+    [data-baseweb="select"] > div,
+    [data-testid="stFileUploader"] section {
+        border-color: #ccd9df;
+        border-radius: 8px;
+    }
+    [data-testid="stAlert"] {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+    }
+    hr {
+        border-color: var(--line);
+        margin: 1.25rem 0;
     }
     @media (max-width: 800px) {
         [data-testid="stAppViewContainer"] .main .block-container {
-            padding: 1.25rem 1rem 2rem;
+            padding: 1rem 1rem 2rem;
         }
         h1 {
-            font-size: 1.9rem;
+            font-size: 1.8rem;
+        }
+        .overview-hero {
+            align-items: center;
+            gap: 0.65rem;
+            min-height: 0;
+            padding: 1rem;
+        }
+        .overview-hero h1 {
+            font-size: 1.8rem;
+        }
+        .overview-hero p {
+            font-size: 0.82rem;
+        }
+        .hero-period {
+            border-left: 1px solid rgba(231, 240, 243, 0.22);
+            border-top: 0;
+            margin-left: 0.35rem;
+            min-width: 140px;
+            padding: 0.3rem 0 0.3rem 0.75rem;
+        }
+        .hero-period strong {
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        [data-testid="stMetric"] {
+            min-height: 88px;
+            padding: 0.75rem;
+        }
+    }
+    @media (max-width: 480px) {
+        .overview-hero {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .hero-period {
+            border-left: 0;
+            border-top: 1px solid rgba(231, 240, 243, 0.22);
+            margin-left: 0;
+            padding: 0.65rem 0 0;
         }
     }
     </style>
@@ -174,9 +458,9 @@ def style_figure(figure: go.Figure, height: int = 430) -> go.Figure:
     figure.update_layout(
         template="plotly_white",
         colorway=[COLORS["navy"], COLORS["teal"], COLORS["gold"], COLORS["blue"], COLORS["coral"]],
-        font={"family": "Segoe UI, sans-serif", "color": COLORS["text"], "size": 12},
-        title={"x": 0.02, "xanchor": "left", "font": {"size": 18, "color": COLORS["navy"]}},
-        margin={"l": 24, "r": 24, "t": 72, "b": 30},
+        font={"family": "Segoe UI, sans-serif", "color": COLORS["text"], "size": 11},
+        title={"x": 0.025, "xanchor": "left", "font": {"size": 16, "color": COLORS["navy"]}},
+        margin={"l": 38, "r": 26, "t": 64, "b": 38},
         height=height,
         paper_bgcolor="rgba(255,255,255,0)",
         plot_bgcolor="#ffffff",
@@ -184,10 +468,10 @@ def style_figure(figure: go.Figure, height: int = 430) -> go.Figure:
         legend={
             "orientation": "h",
             "yanchor": "bottom",
-            "y": 1.01,
+            "y": 1.02,
             "xanchor": "right",
             "x": 1,
-            "font": {"size": 11},
+            "font": {"size": 10},
         },
     )
     figure.update_xaxes(
@@ -206,6 +490,10 @@ def style_figure(figure: go.Figure, height: int = 430) -> go.Figure:
         title_font={"color": COLORS["slate"]},
     )
     return figure
+
+
+def set_active_section(destination: str) -> None:
+    st.session_state.active_section = destination
 
 
 @st.cache_data
@@ -251,43 +539,209 @@ def run_mcmc(data: pd.DataFrame) -> None:
 
 
 data = observations()
-sections = [
-    "Project Overview",
-    "Dataset Explorer",
-    "Ocean Observation Analysis",
-    "SST Analysis",
-    "Chlorophyll-a Analysis",
-    "NPZD Ecosystem Model",
-    "Bayesian Parameter Estimation",
-    "Dataset Upload",
-    "Interactive Prediction",
-    "Prediction and Uncertainty Analysis",
-    "Results and Model Limitations",
-]
-section = st.sidebar.radio("Project sections", sections)
-st.sidebar.success("Offline mode: local files only")
-st.sidebar.caption("Real observations: 11 cloud-screened 2003 dates")
+st.session_state.setdefault("active_section", "Project Overview")
+active_section = st.session_state.active_section
 
-st.title("OceanSense AI")
-st.caption("Satellite-based Black Sea ecosystem monitoring with NPZD simulation and Bayesian parameter estimation")
-st.markdown(
-    f"<div style='height:3px; width:72px; border-radius:3px; background:{COLORS['teal']}; margin:0.15rem 0 1.4rem;'></div>",
+st.sidebar.markdown(
+    """
+    <div class="sidebar-brand">
+        <div class="brand-mark">O</div>
+        <div>
+            <div class="brand-name">OceanSense AI</div>
+            <div class="brand-subtitle">Marine research dashboard</div>
+        </div>
+    </div>
+    <div class="sidebar-section-label">Workspace</div>
+    """,
+    unsafe_allow_html=True,
+)
+for group, destinations in NAVIGATION_GROUPS.items():
+    if group != "Overview":
+        st.sidebar.markdown(
+            f'<div class="sidebar-section-label">{group}</div>',
+            unsafe_allow_html=True,
+        )
+    for destination in destinations:
+        key = "navigate_" + "_".join(destination.lower().split())
+        st.sidebar.button(
+            destination,
+            key=key,
+            type="primary" if destination == active_section else "secondary",
+            use_container_width=True,
+            on_click=set_active_section,
+            args=(destination,),
+        )
+section = st.session_state.active_section
+section_group = next(
+    group for group, destinations in NAVIGATION_GROUPS.items() if section in destinations
+)
+st.sidebar.markdown(
+    """
+    <div class="sidebar-footer">
+        Local analysis · no external services<br>
+        Bundled observations with optional session uploads
+    </div>
+    """,
     unsafe_allow_html=True,
 )
 
-if section == "Project Overview":
-    st.write("This academic prototype is inspired by Bayesian ecosystem-model studies in the Black Sea. It is a simplified, independently implemented NPZD model and does not reproduce the paper's PMCMC workflow.")
-    first, second, third = st.columns(3)
-    first.metric("Observation dates", f"{len(data)}")
-    second.metric(
-        "Chl-a range (mg/m³)",
-        f"{data.chlorophyll_mg_m3.min():.2f}–{data.chlorophyll_mg_m3.max():.2f}",
-    )
-    third.metric("SST range (°C)", f"{data.sst_c.min():.1f}–{data.sst_c.max():.1f}")
-    st.subheader("Offline workflow")
-    st.write("Load bundled observations → inspect real chlorophyll and SST → execute NPZD → inspect saved MCMC posterior or run a fresh chain → examine posterior predictive uncertainty.")
+if section != "Project Overview":
     st.markdown(
-        """<div class="notice-card"><strong>Data note:</strong> MLD and PAR are not included as observations. The model uses an explicitly documented dimensionless seasonal light assumption, while real bundled SST drives its temperature response.</div>""",
+        f'<div class="page-context"><span>{section_group}</span><span> / </span>{section}</div>',
+        unsafe_allow_html=True,
+    )
+
+if section == "Project Overview":
+    st.markdown(
+        f"""
+        <div class="overview-hero">
+            <div>
+                <div class="hero-eyebrow">Black Sea · Ocean observation system</div>
+                <h1>OceanSense AI</h1>
+                <p>Explore satellite-derived chlorophyll-a and sea-surface temperature
+                alongside a transparent NPZD ecosystem model and Bayesian analysis.</p>
+            </div>
+            <div class="hero-period">
+                <span>OBSERVATION WINDOW</span>
+                <strong>{data.date.min():%b %Y}</strong>
+                <span>through {data.date.max():%b %Y}</span>
+                <span>Paired regional means</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    observation_count, chlorophyll_range, sst_range = st.columns(3)
+    with observation_count:
+        st.metric("Observation dates", f"{len(data)}")
+        st.caption("Paired regional means")
+    with chlorophyll_range:
+        st.metric(
+            "Chlorophyll-a range",
+            f"{data.chlorophyll_mg_m3.min():.2f}–{data.chlorophyll_mg_m3.max():.2f}",
+            help="mg/m³",
+        )
+        st.caption("mg/m³ · JRC EMIS MODIS-Aqua")
+    with sst_range:
+        st.metric(
+            "SST range",
+            f"{data.sst_c.min():.1f}–{data.sst_c.max():.1f}",
+            help="°C",
+        )
+        st.caption("°C · NOAA OISST v2.1")
+
+    chart_column, context_column = st.columns([1.8, 0.82], gap="large")
+    with chart_column:
+        st.markdown(
+            '<div class="overview-section-title">Ocean conditions through the observation period</div>'
+            '<div class="overview-section-note">Observed values only · each point is a paired satellite/SST date</div>',
+            unsafe_allow_html=True,
+        )
+        overview_figure = make_subplots(
+            rows=2,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.16,
+            subplot_titles=("Sea-surface temperature", "Chlorophyll-a concentration"),
+        )
+        overview_figure.add_trace(
+            go.Scatter(
+                x=data["date"],
+                y=data["sst_c"],
+                mode="lines+markers",
+                name="SST",
+                line={"color": COLORS["blue"], "width": 2.4},
+                marker={"size": 7, "color": COLORS["blue"]},
+                hovertemplate="%{x|%d %b %Y}<br>SST: %{y:.2f} °C<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+        overview_figure.add_trace(
+            go.Scatter(
+                x=data["date"],
+                y=data["chlorophyll_mg_m3"],
+                mode="lines+markers",
+                name="Chlorophyll-a",
+                line={"color": COLORS["teal"], "width": 2.4},
+                marker={"size": 7, "color": COLORS["teal"]},
+                hovertemplate="%{x|%d %b %Y}<br>Chlorophyll-a: %{y:.3f} mg/m³<extra></extra>",
+            ),
+            row=2,
+            col=1,
+        )
+        overview_figure.update_yaxes(title_text="°C", row=1, col=1)
+        overview_figure.update_yaxes(title_text="mg/m³", rangemode="tozero", row=2, col=1)
+        overview_figure.update_xaxes(
+            title_text="Observation date",
+            tickformat="%b",
+            dtick="M2",
+            range=[data.date.min(), data.date.max()],
+            row=2,
+            col=1,
+        )
+        overview_figure.update_layout(
+            title="Measured Black Sea conditions",
+            showlegend=False,
+            hovermode="x unified",
+        )
+        overview_figure.update_annotations(font={"size": 11, "color": COLORS["slate"]})
+        st.plotly_chart(style_figure(overview_figure, height=500), width="stretch")
+        st.caption(
+            "The connecting segments are visual guides between observations; they do not fill missing dates or represent daily measurements."
+        )
+
+    with context_column:
+        st.markdown(
+            """
+            <div class="overview-section-title">Data at a glance</div>
+            <div class="overview-section-note">Two independent observation products, paired by date.</div>
+            <div class="overview-card">
+                <div class="overview-card-title">Chlorophyll-a</div>
+                <p>JRC EMIS Black Sea MODIS-Aqua product. Spatial means use valid positive pixels; coverage varies with cloud screening.</p>
+            </div>
+            <div class="overview-card">
+                <div class="overview-card-title">Sea-surface temperature</div>
+                <p>NOAA OISST v2.1 regional means in °C. OISST is a Level-4 analysis using satellite and in-situ inputs.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"""
+            <div class="overview-card">
+                <div class="overview-card-title">Sampling coverage</div>
+                <p>{len(data)} paired dates are available. September is absent from the bundled 2003 subset; no observation is fabricated for the gap.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="overview-section-title">Research workflow</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="overview-section-note">A reproducible path from measured observations to model-based interpretation.</div>',
+        unsafe_allow_html=True,
+    )
+    observe, model, quantify = st.columns(3, gap="medium")
+    with observe:
+        st.markdown(
+            '<div class="workflow-step"><span>01 · Observe</span><strong>Inspect the source data</strong><p>Review dates, regional means, source files, and coverage.</p></div>',
+            unsafe_allow_html=True,
+        )
+    with model:
+        st.markdown(
+            '<div class="workflow-step"><span>02 · Model</span><strong>Explore NPZD dynamics</strong><p>Use observed SST forcing with the documented seasonal-light assumption.</p></div>',
+            unsafe_allow_html=True,
+        )
+    with quantify:
+        st.markdown(
+            '<div class="workflow-step"><span>03 · Quantify</span><strong>Examine posterior uncertainty</strong><p>Review parameter estimates and date-specific posterior predictions.</p></div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        """<div class="overview-card" style="border-left:3px solid #b37a35; margin-top:0.9rem;"><div class="overview-card-title">Scientific scope</div><p>Mixed-layer depth and PAR are not bundled observations. Seasonal light is a model assumption; posterior predictions are conditional on this simplified NPZD model and are not future forecasts or independent validation.</p></div>""",
         unsafe_allow_html=True,
     )
 
