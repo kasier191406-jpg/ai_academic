@@ -1,51 +1,79 @@
 # OceanSense AI
 
-OceanSense AI is an offline Streamlit demonstration of Black Sea ecosystem monitoring. It combines bundled real chlorophyll-a and SST observations with a simplified NPZD model and a Metropolis-Hastings Bayesian calibration.
+OceanSense AI is a local marine-science analysis application with a React/Vite JavaScript frontend and a FastAPI backend. The backend reuses the existing Python NPZD, Metropolis–Hastings, upload-validation, and date-specific prediction implementations. Source observations and posterior artifacts are bundled; runtime analysis does not fetch data or call external APIs.
 
-## Run on Windows
+## Requirements
 
-Install packages once (this setup step may need internet access):
+- Python 3.10 or later
+- Node.js 20 or later and npm
+- Windows users can use the provided `run.bat`
 
-```bat
-py -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
+## Install once
+
+From the project root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+cd frontend
+npm install
+cd ..
 ```
 
-Then launch with:
+## Run
 
-```bat
-.venv\Scripts\python.exe -m streamlit run app.py --browser.gatherUsageStats false
+On Windows, run `run.bat` from the project directory. It opens separate local API and frontend terminals. Visit:
+
+- Web application: <http://127.0.0.1:5173>
+- FastAPI documentation: <http://127.0.0.1:8000/docs>
+
+Alternatively, start each service in its own terminal:
+
+```powershell
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Or double-click `run.bat`; it uses the local `.venv` if present, otherwise the Python launcher environment. It does not install packages, send Streamlit usage statistics, or download data. Bundled files under `data/` are read-only; optional CSV uploads remain in Streamlit session memory and do not modify those files.
+```powershell
+cd frontend
+npm run dev -- --host 127.0.0.1
+```
 
-## Upload and interactive prediction
+The Vite development server proxies `/api` requests to the local FastAPI service. Stop each process by closing its terminal or pressing Ctrl+C there. Dependency installation may need network access once; the running application uses only local files and localhost services.
 
-Open **Dataset Upload** to download a CSV template or upload a file with `date`, `sst_c`, and `chlorophyll_mg_m3` columns. The dashboard validates and previews uploaded rows and keeps them separate from the bundled dataset for the current session.
+## Application pages
 
-In **Interactive Prediction**, choose a dataset and an observation date, then run the prediction. The date-specific posterior predictive estimate reuses the bundled Bayesian posterior and NPZD model; uploaded chlorophyll is only shown as the observed comparison, while uploaded SST is used as model forcing. Prediction requires at least two SST observations in the selected calendar year. This is an estimate for an observed date, not a future forecast. Its 95% interval propagates parameter uncertainty only and excludes retrieval and structural model uncertainty.
+The navigation includes Overview, Dataset Explorer, Ocean Observation Analysis, Sea Surface Temperature, Chlorophyll-a, NPZD Ecosystem Model, Bayesian Parameter Estimation, Dataset Upload, Interactive Prediction, Prediction and Uncertainty, and Results and Limitations.
 
-## Bundled observations
+Dataset Upload accepts CSV files with `date`, `sst_c`, and `chlorophyll_mg_m3` columns. The API validates the data and holds it in memory for the current backend process; it never replaces bundled observations. Interactive Prediction uses the existing model prediction workflow and requires at least two SST observations in the selected calendar year. Uploaded chlorophyll is displayed only as a comparison and is not used to fit the bundled posterior. Predictions for selected observation dates are not future forecasts.
 
-`data/processed/black_sea_observations_2003.csv` contains eleven real 2003 observation dates. Chlorophyll-a comes from the European Commission JRC EMIS Black Sea MODIS-Aqua product (`chlideachla`, mg/m³). SST comes from NOAA OISST v2.1 (`sst`, °C). `data/raw/` retains the exact NetCDF source files used by the processing script, and each CSV row records its source filenames.
+The Bayesian page initially displays the bundled posterior artifacts. Fresh four-chain Metropolis–Hastings estimation is run only when explicitly requested and may take a few minutes on a laptop.
 
-The requested Copernicus monthly OMI product requires registered access. The project therefore does not claim that its JRC source is the Copernicus monthly record. See `data/DATASET_METADATA.md` for coverage, processing, attribution, and limitations.
+## Data and scientific scope
 
-## Scientific scope
+`data/processed/black_sea_observations_2003.csv` contains eleven paired dates from 2003. Chlorophyll-a is sourced from the JRC EMIS Black Sea MODIS-Aqua product; SST is from NOAA OISST v2.1, a Level-4 analysis using satellite and in-situ inputs. Raw NetCDF inputs and provenance are retained under `data/`. September is absent and is not fabricated. See [dataset metadata](data/DATASET_METADATA.md).
 
-The NPZD model has nutrient, phytoplankton, zooplankton, and detritus states. A log-normal observational model relates simulated phytoplankton to satellite chlorophyll. Random-walk Metropolis-Hastings samples posterior distributions for growth, grazing, zooplankton mortality, chlorophyll scale, and observation error. This is a simplified academic implementation inspired by Black Sea Bayesian ecosystem modelling, not a reproduction of a published PMCMC workflow.
+The model is a simplified NPZD implementation driven by observed SST and an explicit dimensionless seasonal-light assumption. MLD and PAR are not bundled observations. The Bayesian method is random-walk Metropolis–Hastings, not a reproduction of the referenced paper's PMCMC workflow. Posterior intervals are conditional on this model and propagate parameter uncertainty only; they exclude observation/retrieval and structural-model uncertainty. The small number of observation dates limits parameter identification and convergence assessment.
 
-## Verification
+## Backend API
 
-```bat
-python -m compileall -q app.py src tests
+- `GET /api/health`, `/api/metadata`, `/api/observations`
+- `GET /api/model-info`, `/api/npzd`, `/api/posterior`, `/api/prediction-uncertainty`
+- `POST /api/bayesian/estimate` to explicitly run fresh chains
+- `POST /api/uploads`, `GET`/`DELETE /api/uploads/{upload_id}`
+- `POST /api/predictions`
+
+The existing scientific modules live in `backend/src/`. Small compatibility modules under `src/` preserve the prior Python import paths used by project scripts and tests.
+
+## Verify
+
+```powershell
+python -m compileall -q backend src tests
 pytest -q
+python -m pip check
+cd frontend
+npm run build
 ```
 
-The tests exercise the offline data pipeline, raw observation metadata, NPZD mass balance, multi-chain posterior diagnostics, CSV upload validation, and date-specific predictions. Rebuilding the processed CSV from bundled NetCDF files is optional:
+Tests cover the bundled raw/processed data, NPZD numerical properties, MCMC summaries and diagnostics, CSV validation, API response schemas, and prediction endpoints.
 
-```bat
-python -m src.data_pipeline
-```
-
-See [the academic report](documentation/ACADEMIC_REPORT.md), [professor demonstration guide](documentation/DEMONSTRATION_GUIDE.md), [viva questions](documentation/VIVA_AND_PRESENTATION.md), and [dataset provenance](data/DATASET_METADATA.md).
+The original academic documentation remains under `documentation/`; it describes the scientific project and is not required to run the application.

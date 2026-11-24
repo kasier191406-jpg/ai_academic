@@ -1,24 +1,30 @@
 @echo off
+setlocal
 cd /d "%~dp0"
-if exist ".venv\Scripts\python.exe" goto use_venv
-python -c "import streamlit" >nul 2>nul
-if errorlevel 1 goto check_py
-python -m streamlit run app.py --browser.gatherUsageStats false
-goto :eof
 
-:check_py
-py -c "import streamlit" >nul 2>nul
-if errorlevel 1 goto missing
-py -m streamlit run app.py --browser.gatherUsageStats false
-goto :eof
+if exist ".venv\Scripts\python.exe" (
+    set "PYTHON_EXE=%CD%\.venv\Scripts\python.exe"
+) else (
+    set "PYTHON_EXE=python"
+)
 
-:use_venv
-".venv\Scripts\python.exe" -m streamlit run app.py --browser.gatherUsageStats false
-goto :eof
+"%PYTHON_EXE%" -c "import fastapi, uvicorn, multipart" >nul 2>nul
+if errorlevel 1 (
+    echo Backend dependencies are missing.
+    echo Install them once with: "%PYTHON_EXE%" -m pip install -r requirements.txt
+    exit /b 1
+)
 
-:missing
-echo Streamlit is not installed in the available Python environments.
-echo Install project dependencies once with: python -m pip install -r requirements.txt
-echo Or use the Python launcher environment: py -m pip install -r requirements.txt
-pause
-exit /b 1
+if not exist "frontend\node_modules\vite\bin\vite.js" (
+    echo Frontend dependencies are missing.
+    echo Install them once with: cd frontend ^&^& npm install
+    exit /b 1
+)
+
+start "OceanSense AI API" powershell -NoExit -Command "& '%PYTHON_EXE%' -m uvicorn backend.main:app --host 127.0.0.1 --port 8000"
+start "OceanSense AI Frontend" powershell -NoExit -Command "Set-Location '%CD%\frontend'; npm run dev -- --host 127.0.0.1"
+echo.
+echo OceanSense AI is starting.
+echo Frontend: http://127.0.0.1:5173
+echo API docs: http://127.0.0.1:8000/docs
+echo Close both OceanSense AI PowerShell windows to stop the application.
