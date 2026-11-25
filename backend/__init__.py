@@ -1,1 +1,1 @@
-"""OceanSense AI Python API and scientific backend."""
+"""MARIS Python API and scientific backend."""

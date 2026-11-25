@@ -21,10 +21,10 @@ if not exist "frontend\node_modules\vite\bin\vite.js" (
     exit /b 1
 )
 
-start "OceanSense AI API" powershell -NoExit -Command "& '%PYTHON_EXE%' -m uvicorn backend.main:app --host 127.0.0.1 --port 8000"
-start "OceanSense AI Frontend" powershell -NoExit -Command "Set-Location '%CD%\frontend'; npm run dev -- --host 127.0.0.1"
+start "MARIS API" powershell -NoExit -Command "& '%PYTHON_EXE%' -m uvicorn backend.main:app --host 127.0.0.1 --port 8000"
+start "MARIS Frontend" powershell -NoExit -Command "Set-Location '%CD%\frontend'; npm run dev -- --host 127.0.0.1"
 echo.
-echo OceanSense AI is starting.
+echo MARIS is starting.
 echo Frontend: http://127.0.0.1:5173
 echo API docs: http://127.0.0.1:8000/docs
-echo Close both OceanSense AI PowerShell windows to stop the application.
+echo Close both MARIS PowerShell windows to stop the application.

@@ -1,1 +1,1 @@
-"""OceanSense AI data processing, ecosystem model, and Bayesian inference."""
+"""MARIS data processing, ecosystem model, and Bayesian inference."""

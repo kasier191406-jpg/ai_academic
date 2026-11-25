@@ -20,6 +20,8 @@ const UploadPage = lazy(() => import("./pages/UploadPages").then((module) => ({ 
 const InteractivePredictionPage = lazy(() => import("./pages/UploadPages").then((module) => ({ default: module.InteractivePredictionPage })));
 
 const UploadContext = createContext(null);
+const uploadStorageKey = "maris-upload";
+const previousUploadStorageKey = "oceansense-upload";
 
 const navigation = [
   { group: "Workspace", items: [
@@ -52,7 +54,9 @@ function Shell() {
   const [serviceOnline, setServiceOnline] = useState(false);
   const [upload, setUpload] = useState(() => {
     try {
-      return JSON.parse(sessionStorage.getItem("oceansense-upload") || "null");
+      const savedUpload = sessionStorage.getItem(uploadStorageKey)
+        || sessionStorage.getItem(previousUploadStorageKey);
+      return JSON.parse(savedUpload || "null");
     } catch {
       return null;
     }
@@ -73,8 +77,9 @@ function Shell() {
   }, []);
 
   useEffect(() => {
-    if (upload) sessionStorage.setItem("oceansense-upload", JSON.stringify(upload));
-    else sessionStorage.removeItem("oceansense-upload");
+    if (upload) sessionStorage.setItem(uploadStorageKey, JSON.stringify(upload));
+    else sessionStorage.removeItem(uploadStorageKey);
+    sessionStorage.removeItem(previousUploadStorageKey);
   }, [upload]);
 
   const uploadContext = useMemo(() => ({ upload, setUpload }), [upload]);
@@ -86,7 +91,7 @@ function Shell() {
         <aside className="sidebar">
           <NavLink to="/overview" className="brand">
             <span className="brand-icon"><Waves size={21} strokeWidth={1.8} /></span>
-            <span><strong>OceanSense <em>AI</em></strong><small>MARINE ANALYTICS</small></span>
+            <span><strong>MARIS</strong><small>MARINE ANALYTICS</small></span>
           </NavLink>
           <div className="sidebar-rule" />
           <nav aria-label="Main navigation">
@@ -111,7 +116,7 @@ function Shell() {
         </aside>
         <div className="main-column">
           <header className="topbar">
-            <div className="breadcrumbs"><span>OCEANSENSE</span><span className="crumb-slash">/</span>{currentTitle}</div>
+            <div className="breadcrumbs"><span>MARIS</span><span className="crumb-slash">/</span>{currentTitle}</div>
             <div className="service-state">
               <span className={`service-dot${serviceOnline ? " online" : ""}`} />
               {serviceOnline ? "Local API connected" : "API unavailable"}
@@ -130,7 +135,7 @@ function Shell() {
             </motion.div>
           </main>
           <footer className="app-footer">
-            <span>OceanSense AI <span className="footer-sep">/</span> Research prototype</span>
+            <span>MARIS <span className="footer-sep">/</span> Research prototype</span>
             <span>Observations and model output are distinguished throughout</span>
           </footer>
         </div>

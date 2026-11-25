@@ -1,4 +1,4 @@
-"""FastAPI application for the local OceanSense AI web client."""
+"""FastAPI application for the local MARIS web client."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ runtime_diagnostics: pd.DataFrame | None = None
 runtime_acceptance: float | None = None
 
 app = FastAPI(
-    title="OceanSense AI API",
+    title="MARIS API",
     description="Local API for bundled Black Sea observations and the existing NPZD/Bayesian model.",
     version="1.0.0",
 )
@@ -115,7 +115,7 @@ def _get_uploaded(upload_id: str | None) -> pd.DataFrame:
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "service": "OceanSense AI API"}
+    return {"status": "ok", "service": "MARIS API"}
 
 
 @app.get("/api/observations")

@@ -37,7 +37,7 @@ export function OverviewPage() {
       <div className="hero">
         <div>
           <div className="eyebrow">Black Sea · observation system</div>
-          <h1>OceanSense AI</h1>
+          <h1>MARIS</h1>
           <p>Explore satellite-derived chlorophyll-a and sea-surface temperature with a transparent ecosystem model and Bayesian parameter analysis.</p>
         </div>
         {metadata && <div className="hero-aside"><span>Observation window</span><strong>{dateLabel(metadata.start_date)} – {dateLabel(metadata.end_date)}</strong><small>Paired regional means · {metadata.observation_count} dates</small></div>}

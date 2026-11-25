@@ -1,8 +1,8 @@
-# OceanSense AI: Satellite-Based Marine Ecosystem Monitoring and Bayesian Parameter Estimation
+# MARIS: Satellite-Based Marine Ecosystem Monitoring and Bayesian Parameter Estimation
 
 ## Abstract
 
-OceanSense AI is an offline academic prototype for exploring Black Sea phytoplankton variability. It bundles real MODIS-Aqua chlorophyll-a maps and NOAA OISST observations, derives transparent spatial summaries, simulates a reduced nutrient-phytoplankton-zooplankton-detritus (NPZD) ecosystem, and calibrates selected parameters with Metropolis-Hastings Bayesian inference. The project is inspired by work on satellite-informed Black Sea ecosystem estimation but is not a reproduction of a full process-based or particle-MCMC study.
+MARIS is an offline academic prototype for exploring Black Sea phytoplankton variability. It bundles real MODIS-Aqua chlorophyll-a maps and NOAA OISST observations, derives transparent spatial summaries, simulates a reduced nutrient-phytoplankton-zooplankton-detritus (NPZD) ecosystem, and calibrates selected parameters with Metropolis-Hastings Bayesian inference. The project is inspired by work on satellite-informed Black Sea ecosystem estimation but is not a reproduction of a full process-based or particle-MCMC study.
 
 ## Introduction and problem statement
 
@@ -90,7 +90,7 @@ The selected data cover eleven dates in 2003 rather than the full Copernicus 199
 
 ## Conclusion
 
-OceanSense AI provides a working local demonstration of transparent observation processing, NPZD simulation, Bayesian posterior sampling, credible intervals, and model-observation comparison. It supports a classroom discussion of what observations constrain, what remains uncertain, and why provenance matters.
+MARIS provides a working local demonstration of transparent observation processing, NPZD simulation, Bayesian posterior sampling, credible intervals, and model-observation comparison. It supports a classroom discussion of what observations constrain, what remains uncertain, and why provenance matters.
 
 ## References
 

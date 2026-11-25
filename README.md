@@ -1,6 +1,6 @@
-# OceanSense AI
+# MARIS
 
-OceanSense AI is a local marine-science analysis application with a React/Vite JavaScript frontend and a FastAPI backend. The backend reuses the existing Python NPZD, Metropolis–Hastings, upload-validation, and date-specific prediction implementations. Source observations and posterior artifacts are bundled; runtime analysis does not fetch data or call external APIs.
+MARIS is a local marine-science analysis application with a React/Vite JavaScript frontend and a FastAPI backend. The backend reuses the existing Python NPZD, Metropolis–Hastings, upload-validation, and date-specific prediction implementations. Source observations and posterior artifacts are bundled; runtime analysis does not fetch data or call external APIs.
 
 ## Requirements
 

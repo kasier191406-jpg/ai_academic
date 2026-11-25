@@ -13,7 +13,7 @@ function downloadTemplate() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "oceansense_observations_template.csv";
+  link.download = "maris_observations_template.csv";
   link.click();
   URL.revokeObjectURL(url);
 }

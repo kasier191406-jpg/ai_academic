@@ -1,1 +1,1 @@
-"""OceanSense AI scientific model and analysis modules."""
+"""MARIS scientific model and analysis modules."""
